@@ -9,13 +9,12 @@ import java.util.Map;
 public class Server implements Runnable {
     private final String IP;
     private final Integer port;
-    private ServerSocket serverSocket;
-    public static HashMap<String,String> user;
+    private static ServerSocket serverSocket;
+    public static HashMap<String,String> user = new HashMap<>();
     public Server(String IP, int port) throws IOException {
         this.IP = IP;
         this.port = port;
         serverSocket = new ServerSocket(port);
-        user = new HashMap<>();
     }
 
     public Server(String IP, Integer port) {
@@ -42,7 +41,19 @@ public class Server implements Runnable {
     }
 
     public static void main(String[] args) throws IOException {
-        Server server = new Server("127.0.0.1",5848);
-        server.run();
+        try {
+            serverSocket = new ServerSocket(5848);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        System.out.println("Server Online");
+        while (true){
+            try {
+                SocketThread socketThread = new SocketThread(serverSocket.accept());
+                socketThread.start();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 }
