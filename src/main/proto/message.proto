@@ -10,6 +10,7 @@ enum Control{
   READY = 2;
   INIT = 3;
   CLOSE = 4;
+
 }
 message Quest{
   Control control = 1;

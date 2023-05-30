@@ -5,6 +5,7 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.security.PrivateKey;
+import java.util.Arrays;
 import java.util.List;
 
 public class SocketThread extends Thread{
@@ -36,43 +37,63 @@ public class SocketThread extends Thread{
         }
         return parse;
     }
+
+    private boolean dealWait(Message.Quest A) throws IOException {
+        var Sent = Message.Quest.newBuilder();
+        var TS = Message.Translate.newBuilder();
+        String[] add = Server.user.get(A.getName()).split(":");
+        TS.setIp(add[0]);
+        TS.setPort(add[1]);
+        Sent.setControl(Message.Control.READY);
+        Sent.setState(TS.build());
+        Sent.setName("Server");
+        Sent.build().writeTo(socket.getOutputStream());
+        return true;
+    }
+    private boolean dealBegin(Message.Quest A) throws IOException {
+        var Sent = Message.Quest.newBuilder();
+        var TS = Message.Translate.newBuilder();
+        String[] add = Server.user.get(A.getName()).split(":");
+        TS.setIp(add[0]);
+        TS.setPort(add[1]);
+        Sent.setControl(Message.Control.READY);
+        Sent.setState(TS.build());
+        Sent.setName("Server");
+        Sent.build().writeTo(socket.getOutputStream());
+        return true;
+    }
+    private boolean dealInit(Message.Quest A) throws IOException {
+        Server.user.put(A.getName(),socket.getLocalAddress().getHostAddress()+":"+socket.getPort());
+        var Sent = Message.Quest.newBuilder();
+        Sent.addAllAllName(Server.user.keySet());
+        Sent.setControl(Message.Control.READY);
+        Sent.setName("Server");
+        Sent.build().writeTo(socket.getOutputStream());
+        return true;
+    }
+    private boolean dealReady(Message.Quest A) throws IOException {
+        var Sent = Message.Quest.newBuilder();
+        Sent.addAllAllName(Server.user.keySet());
+        Sent.setControl(Message.Control.READY);
+        Sent.setName("Server");
+        Sent.build().writeTo(socket.getOutputStream());
+        return true;
+    }
     private boolean dealMessage(Message.Quest A) throws IOException {
 
                 if(A == null){
                     return true;
                 }
                 if(A.getControl().equals(Message.Control.WAIT)){
-                    var Sent = Message.Quest.newBuilder();
-                    var TS = Message.Translate.newBuilder();
-                    String[] add = Server.user.get(A.getName()).split(":");
-                    TS.setIp(add[0]);
-                    TS.setPort(add[1]);
-                    Sent.setControl(Message.Control.READY);
-                    Sent.setState(TS.build());
-                    Sent.setName("Server");
-                    Sent.build().writeTo(socket.getOutputStream());
-                    return true;
+                    return dealWait(A);
                 } else if (A.getControl().equals(Message.Control.BEGIN)) {
-                    var Sent = Message.Quest.newBuilder();
-                    var TS = Message.Translate.newBuilder();
-                    String[] add = Server.user.get(A.getName()).split(":");
-                    TS.setIp(add[0]);
-                    TS.setPort(add[1]);
-                    Sent.setControl(Message.Control.READY);
-                    Sent.setState(TS.build());
-                    Sent.setName("Server");
-                    Sent.build().writeTo(socket.getOutputStream());
-                    return true;
+                    return dealBegin(A);
                 } else if(A.getControl().equals(Message.Control.INIT)){
-                    Server.user.put(A.getName(),socket.getLocalAddress().getHostAddress()+":"+socket.getPort());
-                    var Sent = Message.Quest.newBuilder();
-                    Sent.addAllAllName(Server.user.keySet());
-                    Sent.setControl(Message.Control.READY);
-                    Sent.setName("Server");
-                    Sent.build().writeTo(socket.getOutputStream());
-                    return true;
+                    return dealInit(A);
                 } else if (A.getControl().equals(Message.Control.CLOSE)) {
                     return false;
+                } else if (A.getControl().equals(Message.Control.READY)){
+                    return dealReady(A);
                 }
         return false;
     }

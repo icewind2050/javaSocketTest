@@ -25,7 +25,7 @@ public class Server implements Runnable {
     @Override
     public void run() {
         try {
-            serverSocket = new ServerSocket(port+1);
+            serverSocket = new ServerSocket(port);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
